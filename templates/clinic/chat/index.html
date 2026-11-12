@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+
+{% block title %}Assistente IA PetCare | DeepSeek{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-4">
+
+    <!-- Top Info Banner -->
+    <div class="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center flex-shrink-0 shadow-sm shadow-indigo-600/30">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
+            </div>
+            <div>
+                <h1 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                    Assistente Virtual PetCare
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-100 text-indigo-700">DeepSeek AI</span>
+                </h1>
+                <p class="text-xs text-slate-500">Tire dúvidas sobre cuidados com seu pet, horários, vacinas e procedimentos da clínica.</p>
+            </div>
+        </div>
+
+        <div>
+            {% if deepseek_configured %}
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                DeepSeek Conectado
+            </span>
+            {% else %}
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+                <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                Modo Demonstração (Adicione DEEPSEEK_API_KEY no .env)
+            </span>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Chat Container -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col h-[600px] overflow-hidden">
+
+        <!-- Messages Box -->
+        <div id="chat-messages" class="flex-1 p-5 overflow-y-auto space-y-4 bg-slate-50/50">
+
+            <!-- Assistant Welcome Message -->
+            <div class="flex items-start gap-3 max-w-2xl">
+                <div class="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center flex-shrink-0 text-xs font-bold shadow-sm">
+                    AI
+                </div>
+                <div class="bg-white rounded-2xl rounded-tl-sm p-4 text-sm text-slate-800 border border-slate-200 shadow-sm leading-relaxed space-y-2">
+                    <p>Olá! Eu sou o assistente virtual da <strong>PetCare Clínica Veterinária</strong>. 🐶🐱</p>
+                    <p>Como posso te ajudar hoje? Posso tirar dúvidas sobre nossos veterinários, procedimentos clínicos, orientações de vacinação ou guiar você para o agendamento da consulta do seu melhor amigo.</p>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Quick Suggestions Chips -->
+        <div class="px-5 py-2.5 bg-white border-t border-slate-100 flex items-center gap-2 overflow-x-auto text-xs text-slate-600">
+            <span class="font-medium text-slate-400 whitespace-nowrap">Sugestões:</span>
+            <button onclick="sendQuickMessage('Quais vacinas essenciais para cães e gatos?')" class="px-3 py-1 bg-slate-100 hover:bg-slate-200 rounded-full whitespace-nowrap transition">
+                💉 Vacinas essenciais
+            </button>
+            <button onclick="sendQuickMessage('Quais procedimentos e valores base a clínica realiza?')" class="px-3 py-1 bg-slate-100 hover:bg-slate-200 rounded-full whitespace-nowrap transition">
+                📋 Procedimentos e valores
+            </button>
+            <button onclick="sendQuickMessage('Como funciona o agendamento de consultas na PetCare?')" class="px-3 py-1 bg-slate-100 hover:bg-slate-200 rounded-full whitespace-nowrap transition">
+                🗓️ Como agendar consulta
+            </button>
+            <button onclick="sendQuickMessage('O que fazer em caso de emergência com meu pet?')" class="px-3 py-1 bg-slate-100 hover:bg-slate-200 rounded-full whitespace-nowrap transition">
+                ⚠️ Casos de emergência
+            </button>
+        </div>
+
+        <!-- Chat Input Form -->
+        <div class="p-4 bg-white border-t border-slate-200">
+            <form id="chat-form" class="flex items-center gap-3">
+                {% csrf_token %}
+                <div class="relative flex-1">
+                    <input 
+                        type="text" 
+                        id="user-input" 
+                        placeholder="Digite sua dúvida ou mensagem aqui..." 
+                        class="w-full rounded-xl border-slate-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500 py-3 pl-4 pr-10"
+                        autocomplete="off"
+                        required
+                    >
+                </div>
+                <button 
+                    type="submit" 
+                    id="send-btn" 
+                    class="px-5 py-3 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-semibold rounded-xl text-sm shadow-sm transition flex items-center gap-1.5 flex-shrink-0"
+                >
+                    <span>Enviar</span>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                </button>
+            </form>
+        </div>
+
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const chatMessages = document.getElementById("chat-messages");
+    const chatForm = document.getElementById("chat-form");
+    const userInput = document.getElementById("user-input");
+    const sendBtn = document.getElementById("send-btn");
+
+    // Histórico de mensagens mantido em memória no frontend
+    const conversationHistory = [];
+
+    function scrollToBottom() {
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function appendMessage(role, text) {
+        const isUser = role === "user";
+        const wrapper = document.createElement("div");
+        wrapper.className = `flex items-start gap-3 max-w-2xl ${isUser ? 'ml-auto flex-row-reverse' : ''}`;
+
+        const avatar = document.createElement("div");
+        avatar.className = `w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-xs font-bold shadow-sm ${
+            isUser ? 'bg-slate-800 text-white' : 'bg-indigo-600 text-white'
+        }`;
+        avatar.textContent = isUser ? 'VC' : 'AI';
+
+        const bubble = document.createElement("div");
+        bubble.className = `p-4 text-sm leading-relaxed rounded-2xl shadow-sm ${
+            isUser 
+                ? 'bg-slate-800 text-white rounded-tr-sm' 
+                : 'bg-white text-slate-800 border border-slate-200 rounded-tl-sm space-y-2'
+        }`;
+        
+        // Formata quebras de linha e negritos simples
+        const formatted = text
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\n\n/g, '<br><br>')
+            .replace(/\n/g, '<br>');
+        bubble.innerHTML = formatted;
+
+        wrapper.appendChild(avatar);
+        wrapper.appendChild(bubble);
+        chatMessages.appendChild(wrapper);
+        scrollToBottom();
+        return wrapper;
+    }
+
+    function appendTypingIndicator() {
+        const wrapper = document.createElement("div");
+        wrapper.id = "typing-indicator";
+        wrapper.className = "flex items-start gap-3 max-w-2xl";
+        wrapper.innerHTML = `
+            <div class="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center flex-shrink-0 text-xs font-bold shadow-sm">AI</div>
+            <div class="bg-white border border-slate-200 p-3.5 rounded-2xl rounded-tl-sm flex items-center gap-1.5 shadow-sm">
+                <span class="w-2 h-2 rounded-full bg-indigo-400 animate-bounce"></span>
+                <span class="w-2 h-2 rounded-full bg-indigo-500 animate-bounce [animation-delay:0.2s]"></span>
+                <span class="w-2 h-2 rounded-full bg-indigo-600 animate-bounce [animation-delay:0.4s]"></span>
+            </div>
+        `;
+        chatMessages.appendChild(wrapper);
+        scrollToBottom();
+        return wrapper;
+    }
+
+    function removeTypingIndicator() {
+        const ind = document.getElementById("typing-indicator");
+        if (ind) ind.remove();
+    }
+
+    async function sendMessage(text) {
+        if (!text || !text.trim()) return;
+        const cleanText = text.trim();
+
+        // Adiciona à UI e ao histórico
+        appendMessage("user", cleanText);
+        conversationHistory.push({ role: "user", content: cleanText });
+        userInput.value = "";
+        userInput.disabled = true;
+        sendBtn.disabled = true;
+
+        appendTypingIndicator();
+
+        try {
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            const res = await fetch("{% url 'clinic:api_chat' %}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": csrfToken,
+                },
+                body: JSON.stringify({
+                    messages: conversationHistory
+                })
+            });
+
+            const data = await res.json();
+            removeTypingIndicator();
+
+            if (data.success && data.response) {
+                appendMessage("assistant", data.response);
+                conversationHistory.push({ role: "assistant", content: data.response });
+            } else {
+                appendMessage("assistant", data.response || "Desculpe, ocorreu um erro ao consultar o assistente.");
+            }
+        } catch (err) {
+            removeTypingIndicator();
+            appendMessage("assistant", "Falha de conexão com o servidor. Verifique sua conexão e tente novamente.");
+        } finally {
+            userInput.disabled = false;
+            sendBtn.disabled = false;
+            userInput.focus();
+            scrollToBottom();
+        }
+    }
+
+    chatForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        sendMessage(userInput.value);
+    });
+
+    function sendQuickMessage(text) {
+        sendMessage(text);
+    }
+</script>
+{% endblock %}

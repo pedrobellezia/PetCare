@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 24px; color: #1e293b; }
+        .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; }
+        .header { background: #059669; color: white; padding: 28px; text-align: center; }
+        .header h1 { margin: 0; font-size: 22px; font-weight: 700; }
+        .header p { margin: 6px 0 0; opacity: 0.9; font-size: 14px; }
+        .content { padding: 28px; }
+        .card { background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; padding: 20px; margin: 20px 0; }
+        .item { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 14px; }
+        .item strong { color: #475569; }
+        .footer { padding: 20px 28px; background: #f1f5f9; text-align: center; font-size: 12px; color: #64748b; }
+        .badge { display: inline-block; padding: 4px 10px; border-radius: 9999px; font-weight: 600; font-size: 12px; background: #d1fae5; color: #065f46; }
+        table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+        th, td { text-align: left; padding: 8px; font-size: 13px; border-bottom: 1px solid #e2e8f0; }
+        th { color: #64748b; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>PetCare Clínica Veterinária</h1>
+            <p>
+                {% if action == 'completed' %}
+                Resumo de Atendimento Concluído
+                {% else %}
+                Confirmação de Agendamento
+                {% endif %}
+            </p>
+        </div>
+        <div class="content">
+            <p>Olá, <strong>{{ client.name }}</strong>!</p>
+            <p>
+                {% if action == 'completed' %}
+                A consulta do seu pet <strong>{{ pet.name }}</strong> foi concluída com sucesso. Abaixo estão as informações do atendimento:
+                {% else %}
+                O agendamento do seu pet <strong>{{ pet.name }}</strong> foi confirmado na PetCare:
+                {% endif %}
+            </p>
+
+            <div class="card">
+                <div class="item"><strong>Pet:</strong> <span>{{ pet.name }} ({{ pet.get_species_display }} - {{ pet.breed|default:"SRD" }})</span></div>
+                <div class="item"><strong>Veterinário:</strong> <span>{{ professional.name }} ({{ professional.crmv }})</span></div>
+                <div class="item"><strong>Especialidade:</strong> <span>{{ professional.specialty }}</span></div>
+                <div class="item"><strong>Data e Horário:</strong> <span>{{ date_str }}</span></div>
+                <div class="item"><strong>Status:</strong> <span class="badge">{{ appointment.get_status_display }}</span></div>
+                <div class="item"><strong>Motivo:</strong> <span>{{ appointment.reason }}</span></div>
+            </div>
+
+            {% if procedures %}
+            <div style="margin-top: 24px;">
+                <h3 style="font-size: 16px; margin: 0 0 8px; color: #0f172a;">Procedimentos Registrados:</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Procedimento</th>
+                            <th>Qtd</th>
+                            <th>Valor</th>
+                            <th>Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in procedures %}
+                        <tr>
+                            <td>{{ p.procedure.name }}</td>
+                            <td>{{ p.quantity }}</td>
+                            <td>R$ {{ p.price|floatformat:2 }}</td>
+                            <td>R$ {{ p.subtotal|floatformat:2 }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <p style="text-align: right; font-weight: bold; margin-top: 10px; font-size: 14px;">
+                    Total: R$ {{ total_value|floatformat:2 }}
+                </p>
+            </div>
+            {% endif %}
+
+            {% if appointment.clinical_notes %}
+            <div style="margin-top: 20px; background: #fffbeb; border-left: 4px solid #f59e0b; padding: 12px; border-radius: 4px;">
+                <strong style="color: #92400e; font-size: 13px;">Orientações do Veterinário:</strong>
+                <p style="margin: 4px 0 0; font-size: 13px; color: #78350f;">{{ appointment.clinical_notes|linebreaksbr }}</p>
+            </div>
+            {% endif %}
+
+            <p style="margin-top: 24px; font-size: 14px; color: #475569;">
+                Se precisar reagendar ou tirar dúvidas, entre em contato pelo telefone/WhatsApp da clínica: (11) 98765-4321.
+            </p>
+        </div>
+        <div class="footer">
+            <p>PetCare Clínica Veterinária &bull; Av. das Nações Pet, 1200 - Centro</p>
+            <p>Cuidando com dedicação e carinho do seu melhor amigo.</p>
+        </div>
+    </div>
+</body>
+</html>

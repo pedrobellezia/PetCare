@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block title %}Agendamentos | PetCare{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Header & Action -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold tracking-tight text-slate-900">Agendamentos & Consultas</h1>
+            <p class="text-sm text-slate-500">Histórico e agendamento de consultas com registro de procedimentos.</p>
+        </div>
+        <a href="{% url 'clinic:appointment_create' %}" class="inline-flex items-center gap-2 px-4 py-2.5 bg-brand-600 text-white text-sm font-semibold rounded-xl shadow-sm hover:bg-brand-700 transition self-start sm:self-auto">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"></path></svg>
+            Marcar Appointment
+        </a>
+    </div>
+
+    <!-- Filters Bar -->
+    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+        <form method="GET" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Buscar (Pet, Tutor, Motivo)</label>
+                <input type="text" name="q" value="{{ search_query }}" placeholder="Digite para buscar..." class="block w-full rounded-lg border-slate-300 text-sm focus:border-brand-500 focus:ring-brand-500">
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Status</label>
+                <select name="status" class="block w-full rounded-lg border-slate-300 text-sm focus:border-brand-500 focus:ring-brand-500 bg-white">
+                    <option value="">Todos os status</option>
+                    {% for key, label in status_choices %}
+                    <option value="{{ key }}" {% if selected_status == key %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Veterinário</label>
+                <select name="vet" class="block w-full rounded-lg border-slate-300 text-sm focus:border-brand-500 focus:ring-brand-500 bg-white">
+                    <option value="">Todos os profissionais</option>
+                    {% for vet in professionals %}
+                    <option value="{{ vet.id }}" {% if selected_vet == vet.id|stringformat:"s" %}selected{% endif %}>{{ vet.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Data Específica</label>
+                <input type="date" name="date" value="{{ selected_date }}" class="block w-full rounded-lg border-slate-300 text-sm focus:border-brand-500 focus:ring-brand-500">
+            </div>
+
+            <div class="flex items-end gap-2">
+                <button type="submit" class="w-full py-2 px-3 bg-slate-800 hover:bg-slate-900 text-white text-sm font-semibold rounded-lg transition">
+                    Filtrar
+                </button>
+                {% if search_query or selected_status or selected_vet or selected_date %}
+                <a href="{% url 'clinic:appointment_list' %}" class="py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-600 text-sm font-medium rounded-lg transition">
+                    Limpar
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <!-- Table of Appointments -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                        <th class="py-3.5 px-4">Data & Horário</th>
+                        <th class="py-3.5 px-4">Pet / Espécie</th>
+                        <th class="py-3.5 px-4">Cliente (Tutor)</th>
+                        <th class="py-3.5 px-4">Veterinário</th>
+                        <th class="py-3.5 px-4">Status</th>
+                        <th class="py-3.5 px-4">Procedures Feitas</th>
+                        <th class="py-3.5 px-4 text-right">Ações</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 text-sm">
+                    {% for apt in appointments %}
+                    <tr class="hover:bg-slate-50/70 transition">
+                        <td class="py-3.5 px-4 whitespace-nowrap">
+                            <span class="font-semibold text-slate-900">{{ apt.scheduled_at|date:"d/m/Y" }}</span>
+                            <span class="block text-xs text-slate-500">{{ apt.scheduled_at|date:"H:i" }}</span>
+                        </td>
+                        <td class="py-3.5 px-4">
+                            <div class="flex items-center gap-2">
+                                <span class="text-base">
+                                    {% if apt.pet.species == 'dog' %}🐶{% elif apt.pet.species == 'cat' %}🐱{% elif apt.pet.species == 'bird' %}🦜{% else %}🐾{% endif %}
+                                </span>
+                                <div>
+                                    <span class="font-bold text-slate-900">{{ apt.pet.name }}</span>
+                                    <span class="block text-xs text-slate-500">{{ apt.pet.get_species_display }} &bull; {{ apt.pet.breed|default:"SRD" }}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="py-3.5 px-4">
+                            <span class="font-medium text-slate-800">{{ apt.client.name }}</span>
+                            <span class="block text-xs text-slate-500">{{ apt.client.phone }}</span>
+                        </td>
+                        <td class="py-3.5 px-4 whitespace-nowrap">
+                            <span class="font-medium text-slate-800">{{ apt.professional.name }}</span>
+                            <span class="block text-xs text-slate-500">{{ apt.professional.crmv }}</span>
+                        </td>
+                        <td class="py-3.5 px-4 whitespace-nowrap">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold {{ apt.status_badge_class }}">
+                                {{ apt.get_status_display }}
+                            </span>
+                        </td>
+                        <td class="py-3.5 px-4 whitespace-nowrap">
+                            <div class="flex items-center gap-1.5">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-700">
+                                    {{ apt.procedures.count }} realizada(s)
+                                </span>
+                                {% if apt.total_procedures_value > 0 %}
+                                <span class="text-xs font-semibold text-emerald-700">R$ {{ apt.total_procedures_value|floatformat:2 }}</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td class="py-3.5 px-4 text-right whitespace-nowrap">
+                            <a href="{% url 'clinic:appointment_detail' apt.pk %}" class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-brand-700 bg-brand-50 hover:bg-brand-100 rounded-lg transition">
+                                Ver Detalhes &rarr;
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="py-12 text-center text-slate-500">
+                            <p class="text-base font-medium">Nenhum agendamento encontrado.</p>
+                            <p class="text-xs text-slate-400 mt-1">Tente ajustar seus filtros ou crie um novo agendamento.</p>
+                            <a href="{% url 'clinic:appointment_create' %}" class="mt-4 inline-flex items-center px-4 py-2 bg-brand-600 text-white rounded-lg text-xs font-semibold hover:bg-brand-700 transition">
+                                Criar Novo Agendamento
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+
+{% block title %}Painel Principal | PetCare{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+
+    <!-- Top Hero / Welcome -->
+    <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-brand-900 rounded-2xl p-6 sm:p-8 text-white shadow-md relative overflow-hidden">
+        <div class="relative z-10 max-w-2xl">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-brand-500/20 text-brand-300 border border-brand-500/30 mb-3">
+                <span class="w-2 h-2 rounded-full bg-brand-400"></span>
+                PetCare Atendimento Integrado
+            </span>
+            <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">Cuidado veterinário completo com agendamentos e procedimentos</h1>
+            <p class="mt-2 text-slate-300 text-sm sm:text-base leading-relaxed">
+                Gerencie clientes, seus pets, consultas com nossa equipe médica e o registro de cada procedimento realizado no atendimento.
+            </p>
+            <div class="mt-6 flex flex-wrap gap-3">
+                <a href="{% url 'clinic:appointment_create' %}" class="inline-flex items-center gap-2 px-4 py-2.5 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-sm font-semibold shadow-sm transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"></path></svg>
+                    Novo Agendamento
+                </a>
+                <a href="{% url 'clinic:client_create' %}" class="inline-flex items-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-sm font-semibold backdrop-blur-sm transition">
+                    + Cadastrar Tutor / Pet
+                </a>
+                <a href="{% url 'clinic:chatbot' %}" class="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600/80 hover:bg-indigo-600 text-white rounded-xl text-sm font-semibold transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
+                    Assistente DeepSeek
+                </a>
+            </div>
+        </div>
+        <div class="hidden lg:block absolute right-8 -bottom-6 opacity-15 pointer-events-none">
+            <svg class="w-72 h-72 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+            </svg>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex items-center justify-between">
+            <div>
+                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Agendamentos Hoje</p>
+                <p class="mt-1 text-2xl font-bold text-slate-900">{{ today_count }}</p>
+                <p class="mt-1 text-xs text-slate-400">{{ today|date:"d/m/Y" }}</p>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex items-center justify-between">
+            <div>
+                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Pets Cadastrados</p>
+                <p class="mt-1 text-2xl font-bold text-slate-900">{{ total_pets }}</p>
+                <p class="mt-1 text-xs text-brand-600 font-medium">Cães, gatos e outros</p>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex items-center justify-between">
+            <div>
+                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Clientes (Tutores)</p>
+                <p class="mt-1 text-2xl font-bold text-slate-900">{{ total_clients }}</p>
+                <p class="mt-1 text-xs text-slate-400">Com e-mail e WhatsApp</p>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex items-center justify-between">
+            <div>
+                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Veterinários Ativos</p>
+                <p class="mt-1 text-2xl font-bold text-slate-900">{{ total_professionals }}</p>
+                <p class="mt-1 text-xs text-emerald-600 font-medium">Equipe médica</p>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Two-Column Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+        <!-- Column 1 & 2: Próximos Agendamentos -->
+        <div class="lg:col-span-2 space-y-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-lg font-bold text-slate-900">Próximos Agendamentos</h2>
+                    <p class="text-xs text-slate-500">Consultas programadas na clínica</p>
+                </div>
+                <a href="{% url 'clinic:appointment_list' %}" class="text-xs font-semibold text-brand-600 hover:text-brand-700">Ver todos &rarr;</a>
+            </div>
+
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm divide-y divide-slate-100 overflow-hidden">
+                {% if upcoming_appointments %}
+                    {% for apt in upcoming_appointments %}
+                    <div class="p-4 hover:bg-slate-50/80 transition flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div class="flex items-start gap-3.5">
+                            <div class="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center font-bold text-slate-600 flex-shrink-0">
+                                {% if apt.pet.species == 'dog' %}🐶{% elif apt.pet.species == 'cat' %}🐱{% elif apt.pet.species == 'bird' %}🦜{% else %}🐾{% endif %}
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <a href="{% url 'clinic:appointment_detail' apt.pk %}" class="text-sm font-bold text-slate-900 hover:text-brand-600">
+                                        {{ apt.pet.name }}
+                                    </a>
+                                    <span class="text-xs text-slate-500">({{ apt.client.name }})</span>
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold {{ apt.status_badge_class }}">
+                                        {{ apt.get_status_display }}
+                                    </span>
+                                </div>
+                                <p class="text-xs text-slate-600 mt-0.5">
+                                    <span class="font-medium text-slate-700">Vet:</span> {{ apt.professional.name }} &bull; {{ apt.reason|truncatewords:6 }}
+                                </p>
+                                <div class="flex items-center gap-2 mt-1 text-[11px] text-slate-400">
+                                    <span>🗓️ {{ apt.scheduled_at|date:"d/m/Y H:i" }}</span>
+                                    <span>&bull;</span>
+                                    <span>📋 {{ apt.procedures.count }} procedimento(s)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-2 sm:self-center">
+                            <a href="{% url 'clinic:appointment_detail' apt.pk %}" class="px-3 py-1.5 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition">
+                                Detalhes & Procedures
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="p-8 text-center">
+                        <p class="text-sm text-slate-500">Nenhum agendamento futuro no momento.</p>
+                        <a href="{% url 'clinic:appointment_create' %}" class="mt-2 inline-flex items-center text-xs font-semibold text-brand-600 hover:underline">
+                            + Marcar o primeiro agendamento
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Column 3: Quick Info & Integrations Status -->
+        <div class="space-y-6">
+
+            <!-- DeepSeek AI Assistant Card -->
+            <div class="bg-gradient-to-br from-indigo-50 to-white rounded-xl border border-indigo-100 p-5 shadow-sm">
+                <div class="flex items-center gap-2.5 mb-3">
+                    <div class="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-900">Assistente DeepSeek</h3>
+                        <p class="text-xs text-indigo-600 font-medium">Pronto para atendimento</p>
+                    </div>
+                </div>
+                <p class="text-xs text-slate-600 leading-relaxed mb-4">
+                    Responda dúvidas de tutores, confira procedimentos e informações da clínica em tempo real com IA.
+                </p>
+                <a href="{% url 'clinic:chatbot' %}" class="block text-center w-full py-2 px-3 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg shadow-sm transition">
+                    Conversar com o Assistente &rarr;
+                </a>
+            </div>
+
+            <!-- Fluxo de Atendimento Resumo -->
+            <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+                <h3 class="text-sm font-bold text-slate-900 mb-3">Fluxo de Consulta</h3>
+                <ol class="space-y-3 text-xs text-slate-600">
+                    <li class="flex items-start gap-2.5">
+                        <span class="w-5 h-5 rounded-full bg-brand-100 text-brand-700 font-bold flex items-center justify-center flex-shrink-0 text-[10px]">1</span>
+                        <span>Cadastre o <strong>Cliente</strong> e vincule o seu <strong>Pet</strong>.</span>
+                    </li>
+                    <li class="flex items-start gap-2.5">
+                        <span class="w-5 h-5 rounded-full bg-brand-100 text-brand-700 font-bold flex items-center justify-center flex-shrink-0 text-[10px]">2</span>
+                        <span>Marque o <strong>Appointment</strong> com data, horário e veterinário.</span>
+                    </li>
+                    <li class="flex items-start gap-2.5">
+                        <span class="w-5 h-5 rounded-full bg-brand-100 text-brand-700 font-bold flex items-center justify-center flex-shrink-0 text-[10px]">3</span>
+                        <span>O cliente recebe notificação por <strong>E-mail</strong> e <strong>WhatsApp</strong>.</span>
+                    </li>
+                    <li class="flex items-start gap-2.5">
+                        <span class="w-5 h-5 rounded-full bg-brand-100 text-brand-700 font-bold flex items-center justify-center flex-shrink-0 text-[10px]">4</span>
+                        <span>Durante a consulta, registre as <strong>Procedures feitas</strong> e finalize.</span>
+                    </li>
+                </ol>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+{% endblock %}
