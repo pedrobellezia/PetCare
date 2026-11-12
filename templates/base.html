@@ -56,6 +56,7 @@
                     </a>
 
                     <!-- Nav Links (Desktop) -->
+                    {% if request.user.is_authenticated %}
                     <nav class="hidden md:flex items-center gap-1">
                         <a href="{% url 'clinic:dashboard' %}" class="px-3 py-2 text-sm font-medium rounded-lg transition {% if request.resolver_match.url_name == 'dashboard' %}text-brand-700 bg-brand-50{% else %}text-slate-600 hover:text-slate-900 hover:bg-slate-100{% endif %}">
                             Início
@@ -80,15 +81,31 @@
                             <span class="inline-flex items-center px-1.5 py-0.2 text-[10px] font-semibold bg-indigo-100 text-indigo-700 rounded-full">IA</span>
                         </a>
                     </nav>
+                    {% endif %}
                 </div>
 
                 <!-- Right Actions -->
                 <div class="flex items-center gap-3">
-                    <a href="{% url 'clinic:appointment_create' %}" class="inline-flex items-center gap-1.5 px-4 py-2 bg-brand-600 text-white text-sm font-semibold rounded-lg shadow-sm hover:bg-brand-700 active:scale-[0.99] transition">
+                    {% if request.user.is_authenticated %}
+                    <span class="hidden lg:inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 rounded-lg border border-slate-200">
+                        <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                        </svg>
+                        <span>{{ request.user.first_name|default:request.user.username }}</span>
+                    </span>
+
+                    <a href="{% url 'clinic:appointment_create' %}" class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-brand-600 text-white text-sm font-semibold rounded-lg shadow-sm hover:bg-brand-700 active:scale-[0.99] transition">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"></path>
                         </svg>
-                        <span>Novo Agendamento</span>
+                        <span class="hidden sm:inline">Novo Agendamento</span>
+                    </a>
+
+                    <a href="{% url 'clinic:logout' %}" title="Sair do sistema" class="inline-flex items-center gap-1 px-2.5 py-2 text-xs font-semibold text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                        </svg>
+                        <span class="hidden sm:inline">Sair</span>
                     </a>
 
                     <!-- Mobile Hamburger -->
@@ -97,18 +114,32 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
                         </svg>
                     </button>
+                    {% else %}
+                    <a href="{% url 'clinic:login' %}" class="px-3.5 py-2 text-sm font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition">
+                        Entrar
+                    </a>
+                    <a href="{% url 'clinic:register' %}" class="px-3.5 py-2 bg-brand-600 text-white text-sm font-semibold rounded-lg shadow-sm hover:bg-brand-700 active:scale-[0.99] transition">
+                        Criar Conta
+                    </a>
+                    {% endif %}
                 </div>
             </div>
 
             <!-- Mobile Navigation Menu -->
+            {% if request.user.is_authenticated %}
             <div id="mobile-menu" class="hidden md:hidden border-t border-slate-200 py-3 space-y-1">
+                <div class="px-3 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    Conectado como {{ request.user.first_name|default:request.user.username }}
+                </div>
                 <a href="{% url 'clinic:dashboard' %}" class="block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:bg-slate-100">Início</a>
                 <a href="{% url 'clinic:appointment_list' %}" class="block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:bg-slate-100">Agendamentos</a>
                 <a href="{% url 'clinic:client_list' %}" class="block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:bg-slate-100">Clientes & Pets</a>
                 <a href="{% url 'clinic:professional_list' %}" class="block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:bg-slate-100">Veterinários</a>
                 <a href="{% url 'clinic:procedure_list' %}" class="block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:bg-slate-100">Procedimentos</a>
                 <a href="{% url 'clinic:chatbot' %}" class="block px-3 py-2 rounded-md text-base font-medium text-indigo-700 bg-indigo-50">Chat IA DeepSeek</a>
+                <a href="{% url 'clinic:logout' %}" class="block px-3 py-2 rounded-md text-base font-medium text-rose-600 hover:bg-rose-50">Sair da Conta</a>
             </div>
+            {% endif %}
         </div>
     </header>
 
@@ -143,6 +174,7 @@
     </main>
 
     <!-- Floating Chatbot Widget Button -->
+    {% if request.user.is_authenticated %}
     <a href="{% url 'clinic:chatbot' %}" title="Abrir Assistente DeepSeek" class="fixed bottom-6 right-6 z-30 inline-flex items-center gap-2.5 px-4 py-3 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-full shadow-lg shadow-indigo-600/30 hover:scale-105 active:scale-95 transition">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
@@ -150,6 +182,7 @@
         <span class="text-sm font-semibold pr-1">Tirar Dúvida com IA</span>
         <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
     </a>
+    {% endif %}
 
     <!-- Footer -->
     <footer class="mt-auto bg-white border-t border-slate-200 py-6 text-sm text-slate-500">

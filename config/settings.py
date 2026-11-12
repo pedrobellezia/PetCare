@@ -122,3 +122,9 @@ DEEPSEEK_MODEL = os.getenv('DEEPSEEK_MODEL', 'deepseek-chat').strip()
 # WhatsApp Integration Configuration (Placeholder Service)
 WHATSAPP_API_URL = os.getenv('WHATSAPP_API_URL', '').strip()
 WHATSAPP_API_TOKEN = os.getenv('WHATSAPP_API_TOKEN', '').strip()
+
+# Authentication settings
+LOGIN_URL = 'clinic:login'
+LOGIN_REDIRECT_URL = 'clinic:dashboard'
+LOGOUT_REDIRECT_URL = 'clinic:login'
+

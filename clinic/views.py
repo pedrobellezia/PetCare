@@ -1,11 +1,13 @@
 import json
+from datetime import datetime, date
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_POST, require_GET
 from django.contrib import messages
+from django.contrib.auth import login, logout, authenticate
+from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponseBadRequest
 from django.utils import timezone
 from django.db.models import Count, Q, Sum
-from datetime import datetime, date
 
 from .models import Professional, Client, Pet, Procedure, Appointment, AppointmentProcedure
 from .forms import (
@@ -14,13 +16,72 @@ from .forms import (
     ClientForm,
     PetForm,
     ProfessionalForm,
-    ProcedureForm
+    ProcedureForm,
+    LoginForm,
+    RegisterForm,
 )
 from .services.email import send_appointment_email
 from .services.whatsapp import notify_appointment_whatsapp
 from .services.deepseek import ask_deepseek
 
 
+# ==========================================
+# AUTENTICAÇÃO (LOGIN / REGISTRO / LOGOUT)
+# ==========================================
+
+def login_view(request):
+    """Página de Login do sistema PetCare."""
+    if request.user.is_authenticated:
+        return redirect("clinic:dashboard")
+
+    if request.method == "POST":
+        form = LoginForm(request, data=request.POST)
+        if form.is_valid():
+            user = form.get_user()
+            login(request, user)
+            messages.success(request, f"Bem-vindo(a) de volta, {user.first_name or user.username}!")
+            next_url = request.GET.get("next") or request.POST.get("next")
+            return redirect(next_url or "clinic:dashboard")
+        else:
+            messages.error(request, "Usuário ou senha incorretos. Por favor, verifique.")
+    else:
+        form = LoginForm(request)
+
+    return render(request, "clinic/auth/login.html", {"form": form})
+
+
+def register_view(request):
+    """Página de Cadastro de novo usuário no PetCare."""
+    if request.user.is_authenticated:
+        return redirect("clinic:dashboard")
+
+    if request.method == "POST":
+        form = RegisterForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            messages.success(request, f"Conta criada com sucesso! Seja bem-vindo(a), {user.first_name or user.username}!")
+            return redirect("clinic:dashboard")
+        else:
+            messages.error(request, "Por favor, corrija os erros abaixo para criar sua conta.")
+    else:
+        form = RegisterForm()
+
+    return render(request, "clinic/auth/register.html", {"form": form})
+
+
+def logout_view(request):
+    """Encerra a sessão do usuário com segurança."""
+    logout(request)
+    messages.info(request, "Você encerrou sua sessão com segurança.")
+    return redirect("clinic:login")
+
+
+# ==========================================
+# DASHBOARD
+# ==========================================
+
+@login_required
 def dashboard(request):
     """Página principal / Visão Geral da clínica."""
     today = timezone.localdate()
@@ -62,6 +123,7 @@ def dashboard(request):
 # AGENDAMENTOS (APPOINTMENTS)
 # ==========================================
 
+@login_required
 def appointment_list(request):
     """Listagem de agendamentos com filtros."""
     status_filter = request.GET.get("status", "")
@@ -81,24 +143,25 @@ def appointment_list(request):
         qs = qs.filter(professional_id=vet_filter)
     if date_filter:
         try:
-            filter_date = datetime.strptime(date_filter, "%Y-%m-%d").date()
-            qs = qs.filter(scheduled_at__date=filter_date)
+            parsed_date = datetime.strptime(date_filter, "%Y-%m-%d").date()
+            qs = qs.filter(scheduled_at__date=parsed_date)
         except ValueError:
             pass
     if search_query:
         qs = qs.filter(
-            Q(pet__name__icontains=search_query) |
             Q(client__name__icontains=search_query) |
+            Q(pet__name__icontains=search_query) |
             Q(reason__icontains=search_query)
         )
 
+    qs = qs.order_by("-scheduled_at")
+
     professionals = Professional.objects.filter(is_active=True)
-    status_choices = Appointment.Status.choices
 
     context = {
         "appointments": qs,
+        "status_choices": Appointment.Status.choices,
         "professionals": professionals,
-        "status_choices": status_choices,
         "selected_status": status_filter,
         "selected_vet": vet_filter,
         "selected_date": date_filter,
@@ -107,9 +170,9 @@ def appointment_list(request):
     return render(request, "clinic/appointments/list.html", context)
 
 
+@login_required
 def appointment_create(request):
     """Criação de novo agendamento com disparo de e-mail e zap placeholder."""
-    # Pré-seleção se vier do perfil de um cliente ou pet
     initial = {}
     client_id = request.GET.get("client_id")
     pet_id = request.GET.get("pet_id")
@@ -133,7 +196,7 @@ def appointment_create(request):
             if email_sent:
                 msg += " E-mail de confirmação enviado."
             if zap_result.get("success"):
-                msg += " Notificação WhatsApp disparada (placeholder)."
+                msg += " Notificação WhatsApp disparada."
 
             messages.success(request, msg)
             return redirect("clinic:appointment_detail", pk=appointment.pk)
@@ -147,6 +210,7 @@ def appointment_create(request):
     return render(request, "clinic/appointments/form.html", context)
 
 
+@login_required
 def appointment_detail(request, pk):
     """Visualização detalhada do agendamento, procedures realizadas e histórico."""
     appointment = get_object_or_404(
@@ -164,6 +228,7 @@ def appointment_detail(request, pk):
     return render(request, "clinic/appointments/detail.html", context)
 
 
+@login_required
 def appointment_edit(request, pk):
     """Edição de dados do agendamento."""
     appointment = get_object_or_404(Appointment, pk=pk)
@@ -185,6 +250,7 @@ def appointment_edit(request, pk):
     return render(request, "clinic/appointments/form.html", context)
 
 
+@login_required
 @require_POST
 def appointment_status_update(request, pk):
     """Atualização rápida de status do agendamento."""
@@ -199,7 +265,7 @@ def appointment_status_update(request, pk):
         if new_status == Appointment.Status.COMPLETED and old_status != Appointment.Status.COMPLETED:
             send_appointment_email(appointment, action="completed")
             notify_appointment_whatsapp(appointment, action="completed")
-            messages.success(request, f"Atendimento concluído! E-mail e WhatsApp de encerramento despachados.")
+            messages.success(request, "Atendimento concluído! E-mail e WhatsApp de encerramento despachados.")
         else:
             messages.info(request, f"Status atualizado para: {appointment.get_status_display()}")
 
@@ -210,6 +276,7 @@ def appointment_status_update(request, pk):
 # PROCEDURES REALIZADAS DENTRO DO APPOINTMENT
 # ==========================================
 
+@login_required
 @require_POST
 def appointment_add_procedure(request, pk):
     """Adiciona um procedimento realizado a um agendamento existente."""
@@ -229,6 +296,7 @@ def appointment_add_procedure(request, pk):
     return redirect("clinic:appointment_detail", pk=appointment.pk)
 
 
+@login_required
 @require_POST
 def appointment_delete_procedure(request, pk, procedure_id):
     """Remove um procedimento registrado no agendamento."""
@@ -244,6 +312,7 @@ def appointment_delete_procedure(request, pk, procedure_id):
 # CLIENTES & PETS
 # ==========================================
 
+@login_required
 def client_list(request):
     """Listagem de clientes e seus respectivos pets."""
     q = request.GET.get("q", "")
@@ -263,6 +332,7 @@ def client_list(request):
     return render(request, "clinic/clients/list.html", context)
 
 
+@login_required
 def client_create(request):
     """Cadastro de novo cliente (tutor)."""
     if request.method == "POST":
@@ -270,7 +340,6 @@ def client_create(request):
         if form.is_valid():
             client = form.save()
             messages.success(request, f"Cliente '{client.name}' cadastrado com sucesso!")
-            # Se foi solicitado já cadastrar pet em seguida
             if "and_pet" in request.POST:
                 return redirect(f"/pets/novo/?client_id={client.pk}")
             return redirect("clinic:client_detail", pk=client.pk)
@@ -280,6 +349,7 @@ def client_create(request):
     return render(request, "clinic/clients/form.html", {"form": form, "title": "Cadastrar Novo Cliente"})
 
 
+@login_required
 def client_detail(request, pk):
     """Detalhes do cliente, seus pets e histórico de agendamentos."""
     client = get_object_or_404(
@@ -294,6 +364,7 @@ def client_detail(request, pk):
     return render(request, "clinic/clients/detail.html", context)
 
 
+@login_required
 def pet_create(request):
     """Cadastro de pet para um cliente."""
     initial = {}
@@ -317,6 +388,7 @@ def pet_create(request):
 # PROFISSIONAIS (VETERINÁRIOS)
 # ==========================================
 
+@login_required
 def professional_list(request):
     """Equipe de veterinários da clínica."""
     vets = Professional.objects.annotate(
@@ -325,6 +397,7 @@ def professional_list(request):
     return render(request, "clinic/professionals/list.html", {"professionals": vets})
 
 
+@login_required
 def professional_create(request):
     """Cadastro de profissional veterinário."""
     if request.method == "POST":
@@ -343,12 +416,14 @@ def professional_create(request):
 # PROCEDIMENTOS DA CLÍNICA
 # ==========================================
 
+@login_required
 def procedure_list(request):
     """Catálogo de procedimentos veterinários."""
     procs = Procedure.objects.all()
     return render(request, "clinic/procedures/list.html", {"procedures": procs})
 
 
+@login_required
 def procedure_create(request):
     """Cadastro de novo procedimento no catálogo."""
     if request.method == "POST":
@@ -367,11 +442,13 @@ def procedure_create(request):
 # CHATBOT COM DEEPSEEK
 # ==========================================
 
+@login_required
 def chatbot_view(request):
     """Interface moderna do Chatbot PetCare."""
     return render(request, "clinic/chat/index.html")
 
 
+@login_required
 @require_POST
 def api_chat(request):
     """Endpoint JSON que repassa a conversa para o DeepSeek."""
@@ -393,6 +470,7 @@ def api_chat(request):
 # APIS AUXILIARES (DINÂMICAS NO FRONT)
 # ==========================================
 
+@login_required
 @require_GET
 def api_client_pets(request, client_id):
     """Retorna JSON dos pets de um cliente específico para atualização no formulário."""
@@ -400,6 +478,7 @@ def api_client_pets(request, client_id):
     return JsonResponse({"pets": list(pets)})
 
 
+@login_required
 @require_GET
 def api_procedure_details(request, procedure_id):
     """Retorna dados de valor de um procedimento para auto-preenchimento."""

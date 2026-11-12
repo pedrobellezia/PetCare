@@ -4,6 +4,11 @@ from . import views
 app_name = "clinic"
 
 urlpatterns = [
+    # Autenticação
+    path("login/", views.login_view, name="login"),
+    path("cadastro/", views.register_view, name="register"),
+    path("logout/", views.logout_view, name="logout"),
+
     # Dashboard
     path("", views.dashboard, name="dashboard"),
     

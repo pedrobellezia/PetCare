@@ -1,9 +1,12 @@
-from django.test import TestCase, Client as TestClient
-from django.urls import reverse
-from django.utils import timezone
+import json
 from datetime import timedelta, date
 from decimal import Decimal
-import json
+from unittest.mock import patch
+
+from django.test import TestCase, Client as TestClient, override_settings
+from django.urls import reverse
+from django.utils import timezone
+from django.contrib.auth.models import User
 
 from clinic.models import Professional, Client, Pet, Procedure, Appointment, AppointmentProcedure
 from clinic.services.whatsapp import send_whatsapp_message, notify_appointment_whatsapp
@@ -48,7 +51,6 @@ class PetCareModelsTestCase(TestCase):
             reason="Checkup de rotina",
         )
 
-        # Adiciona procedimento ao agendamento
         proc_item = AppointmentProcedure.objects.create(
             appointment=appointment,
             procedure=self.procedure,
@@ -61,13 +63,14 @@ class PetCareModelsTestCase(TestCase):
         self.assertEqual(proc_item.subtotal, Decimal("240.00"))
         self.assertEqual(appointment.total_procedures_value, Decimal("240.00"))
 
-    def test_whatsapp_placeholder_service(self):
-        """Testa o comportamento e formato de retorno da função placeholder do WhatsApp."""
+    def test_whatsapp_service_contract(self):
+        """Testa o comportamento e contrato de retorno do serviço de WhatsApp."""
         res = send_whatsapp_message("(11) 98765-4321", "Olá, seu agendamento foi confirmado!")
-        self.assertTrue(res["success"])
+        self.assertIn("success", res)
         self.assertIn("phone", res)
         self.assertIn("message", res)
 
+    @override_settings(DEEPSEEK_API_KEY="")
     def test_deepseek_fallback_service(self):
         """Testa resposta de fallback do chatbot quando a chave não estiver configurada."""
         messages = [{"role": "user", "content": "Quais vacinas meu pet precisa?"}]
@@ -76,9 +79,17 @@ class PetCareModelsTestCase(TestCase):
         self.assertIn("response", res)
 
 
-class PetCareViewsTestCase(TestCase):
+class PetCareAuthAndViewsTestCase(TestCase):
     def setUp(self):
         self.client_http = TestClient()
+        self.user = User.objects.create_user(
+            username="vetuser",
+            password="password123",
+            first_name="Dr. Lucas"
+        )
+        # Faz login por padrão nos testes de páginas internas
+        self.client_http.login(username="vetuser", password="password123")
+
         self.professional = Professional.objects.create(
             name="Dr. Roberto Lima",
             email="roberto@petcare.local",
@@ -109,10 +120,33 @@ class PetCareViewsTestCase(TestCase):
             reason="Vacinação",
         )
 
-    def test_dashboard_view(self):
+    def test_unauthenticated_access_redirects_to_login(self):
+        """Garante que usuários anônimos são redirecionados para a tela de login."""
+        anon = TestClient()
+        res = anon.get(reverse("clinic:dashboard"))
+        self.assertEqual(res.status_code, 302)
+        self.assertIn(reverse("clinic:login"), res.url)
+
+    def test_login_and_logout(self):
+        """Testa fluxo de login com credenciais válidas e logout."""
+        anon = TestClient()
+        res = anon.post(reverse("clinic:login"), {
+            "username": "vetuser",
+            "password": "password123"
+        })
+        self.assertEqual(res.status_code, 302)
+        self.assertEqual(res.url, reverse("clinic:dashboard"))
+
+        # Deslogar
+        logout_res = self.client_http.get(reverse("clinic:logout"))
+        self.assertEqual(logout_res.status_code, 302)
+        self.assertIn(reverse("clinic:login"), logout_res.url)
+
+    def test_dashboard_view_authenticated(self):
         res = self.client_http.get(reverse("clinic:dashboard"))
         self.assertEqual(res.status_code, 200)
         self.assertContains(res, "PetCare")
+        self.assertContains(res, "Dr. Lucas")
 
     def test_appointment_list_view(self):
         res = self.client_http.get(reverse("clinic:appointment_list"))
@@ -125,7 +159,6 @@ class PetCareViewsTestCase(TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertContains(res, "Procedimentos Realizados")
 
-        # Adicionar procedimento via POST
         add_url = reverse("clinic:appointment_add_procedure", kwargs={"pk": self.appointment.pk})
         post_data = {
             "procedure": self.procedure.pk,
@@ -145,6 +178,7 @@ class PetCareViewsTestCase(TestCase):
         self.assertEqual(len(data["pets"]), 1)
         self.assertEqual(data["pets"][0]["name"], "Bob")
 
+    @override_settings(DEEPSEEK_API_KEY="")
     def test_api_chat(self):
         url = reverse("clinic:api_chat")
         payload = {

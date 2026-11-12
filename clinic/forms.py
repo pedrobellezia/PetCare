@@ -1,5 +1,7 @@
 from django import forms
 from django.utils import timezone
+from django.contrib.auth.models import User
+from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from .models import Professional, Client, Pet, Procedure, Appointment, AppointmentProcedure
 
 
@@ -135,3 +137,63 @@ class ProcedureForm(BaseStyledForm):
             "default_price": forms.NumberInput(attrs={"step": "0.01", "placeholder": "150.00"}),
             "estimated_duration_min": forms.NumberInput(attrs={"step": "5", "placeholder": "30"}),
         }
+
+
+class LoginForm(AuthenticationForm):
+    """Formulário de autenticação de usuários estilizado."""
+    username = forms.CharField(
+        label="Nome de usuário",
+        widget=forms.TextInput(attrs={
+            "class": "block w-full rounded-lg border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm",
+            "placeholder": "Seu usuário",
+            "autofocus": True,
+        })
+    )
+    password = forms.CharField(
+        label="Senha",
+        widget=forms.PasswordInput(attrs={
+            "class": "block w-full rounded-lg border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm",
+            "placeholder": "••••••••",
+        })
+    )
+
+
+class RegisterForm(UserCreationForm):
+    """Formulário de cadastro de novo usuário na clínica."""
+    first_name = forms.CharField(
+        label="Nome Completo",
+        max_length=150,
+        required=True,
+        widget=forms.TextInput(attrs={
+            "class": "block w-full rounded-lg border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm",
+            "placeholder": "Dra. Juliana Silva",
+        })
+    )
+    email = forms.EmailField(
+        label="E-mail",
+        required=True,
+        widget=forms.EmailInput(attrs={
+            "class": "block w-full rounded-lg border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm",
+            "placeholder": "juliana@petcare.com.br",
+        })
+    )
+
+    class Meta(UserCreationForm.Meta):
+        model = User
+        fields = ("username", "first_name", "email")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["username"].widget.attrs.update({
+            "class": "block w-full rounded-lg border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm",
+            "placeholder": "julianavet"
+        })
+        self.fields["password1"].widget.attrs.update({
+            "class": "block w-full rounded-lg border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm",
+            "placeholder": "••••••••"
+        })
+        self.fields["password2"].widget.attrs.update({
+            "class": "block w-full rounded-lg border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm",
+            "placeholder": "••••••••"
+        })
+
